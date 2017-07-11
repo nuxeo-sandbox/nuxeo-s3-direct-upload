@@ -1,0 +1,74 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/nuxeo-elements/nuxeo-connection.html">
+<link rel="import" href="../bower_components/nuxeo-elements/nuxeo-document.html">
+<script type="text/javascript" src="../bower_components/aws-sdk-js/dist/aws-sdk.js"></script>
+<script type="text/javascript" src="../bower_components/js-spark-md5/spark-md5.js"></script>
+<link rel="import" href="nuxeo-document-import-s3.html">
+<link rel="import" href="nuxeo-dropzone-s3.html">
+
+<dom-module id="my-app">
+  <template>
+    <style>
+      :host {
+        width:100%;
+      }
+
+      paper-card {
+        width: 50%;
+        margin: 36px auto;
+        display: block;
+      }
+    </style>
+    <nuxeo-connection url="http://localhost:8080/nuxeo" username="Administrator" password="Administrator"></nuxeo-connection>
+    <nuxeo-document id="poster" method="POST" doc-path="/default-domain/workspaces/test" data="{{document}}"></nuxeo-document>
+
+    <div>
+      <paper-card heading="Upload New Asset">
+          <div class="card-content">
+            <paper-input label="Asset Name" value="{{title}}"></paper-input>
+            <input type="file" id="filepicker">
+            <nuxeo-dropzone-s3 document="{{document}}" xpath="file:content"></nuxeo-dropzone-s3>
+         </div>
+         <div class="card-actions">
+            <paper-button on-tap="_upload">Upload</paper-button>
+        </div>
+      </paper-card>
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'my-app',
+      properties: {
+        document: {
+          type: Object,
+          value: {
+            'entity-type':'document',
+            properties: {},
+            type: 'Picture'
+          }
+        }
+      },
+
+      _upload:function() {
+        this.document.title = this.title;
+        this.document.name = this.title;
+        this.$.poster.execute();
+      }
+
+    });
+  </script>
+</dom-module>

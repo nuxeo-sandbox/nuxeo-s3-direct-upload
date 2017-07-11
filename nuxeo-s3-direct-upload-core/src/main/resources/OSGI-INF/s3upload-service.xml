@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.s3.upload.S3Upload" version="1.0">
+
+  <implementation class="org.nuxeo.s3.upload.S3UploadImpl" />
+
+  <service>
+    <provide interface="org.nuxeo.s3.upload.S3Upload" />
+  </service>
+</component>

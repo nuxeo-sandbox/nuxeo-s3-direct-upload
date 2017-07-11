@@ -1,0 +1,9 @@
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Manifest-Version: 1.0
+Bundle-Vendor: org.nuxeo.s3.upload
+Bundle-Version: 1.0.0
+Bundle-Name: nuxeo-s3-direct-upload-core
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.nuxeo.s3.upload.nuxeo-s3-direct-upload-core;singleton=true
+Nuxeo-Component: OSGI-INF/s3upload-service.xml
