@@ -266,8 +266,7 @@ limitations under the License.
 
     getFileMd5:function(file) {
       var promise = new Promise(function(resolve, reject) {
-        var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
-            chunkSize = 2097152,                             // Read in chunks of 2MB
+        var chunkSize = 2097152,                             // Read in chunks of 2MB
             chunks = Math.ceil(file.size / chunkSize),
             currentChunk = 0,
             spark = new SparkMD5.ArrayBuffer(),
@@ -293,7 +292,7 @@ limitations under the License.
         var loadNext = function() {
             var start = currentChunk * chunkSize,
                 end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
-            fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
+            fileReader.readAsArrayBuffer(file.slice(start, end));
         };
 
         loadNext();
