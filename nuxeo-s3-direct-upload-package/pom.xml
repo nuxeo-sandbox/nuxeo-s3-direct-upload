@@ -25,10 +25,6 @@
       <groupId>org.nuxeo.s3.upload</groupId>
       <artifactId>nuxeo-s3-direct-upload-core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.nuxeo.s3.upload</groupId>
-      <artifactId>nuxeo-s3-direct-upload-web</artifactId>
-    </dependency>
   </dependencies>
 
   <build>

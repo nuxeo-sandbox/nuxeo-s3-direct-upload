@@ -19,15 +19,16 @@
  */
 package org.nuxeo.s3.upload;
 
-import java.io.IOException;
-
 import org.codehaus.jackson.node.ObjectNode;
 import org.nuxeo.ecm.automation.core.util.JSONBlobDecoder;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.blob.BlobInfo;
 import org.nuxeo.ecm.core.blob.BlobManager;
 import org.nuxeo.ecm.core.blob.BlobProvider;
 import org.nuxeo.runtime.api.Framework;
+
+import java.io.IOException;
 
 public class JSONS3Decoder implements JSONBlobDecoder {
 
@@ -39,7 +40,7 @@ public class JSONS3Decoder implements JSONBlobDecoder {
         }
 
         BlobProvider provider = Framework.getService(BlobManager.class).getBlobProvider("default");
-        BlobManager.BlobInfo info = new BlobManager.BlobInfo();
+        BlobInfo info = new BlobInfo();
         info.key = jsonObject.get("key").getTextValue();
         info.filename = jsonObject.get("filename").getTextValue();
         info.length = jsonObject.get("length").getLongValue();

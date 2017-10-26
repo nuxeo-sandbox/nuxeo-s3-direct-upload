@@ -1,18 +1,17 @@
 package org.nuxeo.s3.blob;
 
-import java.io.IOException;
-
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.blob.BlobManager;
+import org.nuxeo.ecm.core.blob.BlobInfo;
 import org.nuxeo.ecm.core.blob.binary.BinaryBlobProvider;
 import org.nuxeo.ecm.core.storage.sql.S3BinaryManager;
 
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import java.io.IOException;
 
 public class CustomS3BinaryManager extends S3BinaryManager {
 
     @Override
-    public Blob readBlob(BlobManager.BlobInfo blobInfo) throws IOException {
+    public Blob readBlob(BlobInfo blobInfo) throws IOException {
         if (blobInfo.length == null) {
             String digest = blobInfo.key;
             // strip prefix
@@ -34,7 +33,7 @@ public class CustomS3BinaryManager extends S3BinaryManager {
 
 
     @Override
-    public boolean performsExternalAccessControl(BlobManager.BlobInfo blobInfo) {
+    public boolean performsExternalAccessControl(BlobInfo blobInfo) {
         return true;
     }
 }
