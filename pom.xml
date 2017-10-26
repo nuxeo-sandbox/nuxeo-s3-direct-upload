@@ -9,7 +9,7 @@
 
   <groupId>org.nuxeo.s3.upload</groupId>
   <artifactId>nuxeo-s3-direct-upload-parent</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>9.2-SNAPSHOT</version>
   <name>Nuxeo s3 direct upload parent</name>
   <description/>
   <packaging>pom</packaging>
@@ -72,12 +72,12 @@
       <dependency>
         <groupId>org.nuxeo.s3.upload</groupId>
         <artifactId>nuxeo-s3-direct-upload-core</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>9.2-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.nuxeo.s3.upload</groupId>
         <artifactId>nuxeo-s3-direct-upload-package</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>9.2-SNAPSHOT</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
