@@ -88,11 +88,8 @@ limitations under the License.
         this.files = [];
         //this._newBatch().then(this._uploadeFiles.bind(this, files));
         this._newBatch();
-        this._uploadeFiles(files);
-      } else {
-        this._uploadeFiles(files);
       }
-
+      this._uploadeFiles(files);
     },
 
     batchExecute: function(operationId, params, headers) {
@@ -132,8 +129,7 @@ limitations under the License.
 
     _uploadeFiles: function(files) {
       var context = this;
-      for (var i = 0; i < files.length; i++) {
-        var file = files[i];
+      files.forEach(function(file, i) {
         file.idx = i;
         file.progress = 0;
         file.error = false;
@@ -169,7 +165,7 @@ limitations under the License.
             });
           });
         }.bind(this));
-      }
+      });
       /*this.uploader.done().then(function(result) {
         this._batchFinished(result.batch._batchId);
       }.bind(this));*/

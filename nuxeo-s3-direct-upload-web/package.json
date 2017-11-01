@@ -1,6 +1,7 @@
 {
   "name": "s3upload",
   "devDependencies": {
+    "bower": "^1.8.2",
     "cpr": "^2.0.2",
     "eslint": "^3.12.0",
     "eslint-config-google": "^0.7.1",
@@ -17,6 +18,7 @@
     "prebuild": "npm run clean",
     "build": "polymer build",
     "postbuild": "npm run nuxeo",
+    "postinstall": "bower update",
     "prenuxeo": "mkdirp target/classes/nuxeo.war/s3upload",
     "nuxeo": "cpr build/default/ target/classes/nuxeo.war/s3upload -o && cpr nuxeo/ target/classes/ -o",
     "serve": "polymer serve --port 3000 --proxy-path=\"${npm_config_proxy_path:-nuxeo}\" --proxy-target=\"${npm_config_proxy_target:-http://localhost:8080/nuxeo}\""

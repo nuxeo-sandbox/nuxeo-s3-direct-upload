@@ -34,9 +34,6 @@
     <exec executable="${cmd.npm}" failonerror="true">
       <arg value="install" />
     </exec>
-    <exec executable="${cmd.bower}" failonerror="true">
-      <arg value="update" />
-    </exec>
   </target>
 
   <target name="build" depends="init">
