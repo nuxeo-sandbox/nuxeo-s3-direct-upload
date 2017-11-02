@@ -36,16 +36,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <nuxeo-document id="poster" method="POST" doc-path="/default-domain/workspaces/test" data="{{document}}"></nuxeo-document>
 
     <div>
-      <paper-card heading="Upload New Asset">
-          <div class="card-content">
-            <paper-input label="Asset Name" value="{{title}}"></paper-input>
-            <input type="file" id="filepicker">
-            <nuxeo-dropzone-s3 document="{{document}}" xpath="file:content"></nuxeo-dropzone-s3>
-         </div>
-         <div class="card-actions">
-            <paper-button on-tap="_upload">Upload</paper-button>
-        </div>
-      </paper-card>
+      <nuxeo-document-import-s3></nuxeo-document-import-s3>
     </div>
   </template>
 

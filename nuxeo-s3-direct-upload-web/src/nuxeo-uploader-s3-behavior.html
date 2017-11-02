@@ -128,30 +128,30 @@ limitations under the License.
     },
 
     _uploadeFiles: function(files) {
-      var context = this;
-      files.forEach(function(file, i) {
+      const context = this;
+
+      Array.prototype.forEach.call(files, function(file, i) {
         file.idx = i;
         file.progress = 0;
         file.error = false;
         file.complete = false;
-        this.push('files', file);
+        context.push('files', file);
         //var blob = new Nuxeo.Blob({ content: file });
-        this._uploadStarted(i, file);
+        context._uploadStarted(i, file);
         /*this.uploader.upload(blob)
           .then(function(result) {
             this._uploadFinished(result.blob.fileIdx);
           }.bind(this));*/
-        this.getFileMd5(file).then(function(file){
-          //this._computeMD5(file);
-          //file.md5 = md5;
-          this.s3.upload({
+        context.getFileMd5(file).then(function(file){
+          const opts = {partSize: 10 * 1024 * 1024, queueSize: 8};
+          context.s3.upload({
             Key: file.md5,
             Body: file,
             Metadata: {
               filename: file.name,
               mimeType: file.type
             }
-          }, function(err, data) {
+          }, opts, function(err) {
             if (err) {
               return alert('There was an error uploading your file: ', err.message);
             } else {
