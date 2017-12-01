@@ -129,6 +129,7 @@ limitations under the License.
 
     _uploadeFiles: function(files) {
       const context = this;
+      const times = {};
 
       Array.prototype.forEach.call(files, function(file, i) {
         file.idx = i;
@@ -142,8 +143,14 @@ limitations under the License.
           .then(function(result) {
             this._uploadFinished(result.blob.fileIdx);
           }.bind(this));*/
-        context.getFileMd5(file).then(function(file){
-          const opts = {partSize: 10 * 1024 * 1024, queueSize: 8};
+        let progress;
+        let lastProgress;
+        context.getFileMd5(file).then(function(file) {
+          const opts = {
+            queueSize: 4
+          };
+          times[file.idx] = new Date().getTime();
+          console.log(`Start: ${file.idx}: ${times[file.idx]}`)
           context.s3.upload({
             Key: file.md5,
             Body: file,
@@ -155,14 +162,23 @@ limitations under the License.
             if (err) {
               return alert('There was an error uploading your file: ', err.message);
             } else {
+              const finish = new Date().getTime();
+              console.log(`Finish: ${file.idx}: ${Math.ceil((finish - times[file.idx]) / 1000)} (${finish})`)
               context._uploadFinished(file.idx);
               context._batchFinished();
             }
           }).on('httpUploadProgress', function(evt) {
-            var progress = parseInt((evt.loaded * 100) / evt.total);
-            context._updateFile(file.idx, {
-              progress: progress,
-            });
+            const nprogress = parseInt((evt.loaded * 100) / evt.total);
+            if (nprogress !== progress) {
+              progress = nprogress;
+              const nLastProgress = new Date().getTime();
+              console.log(`${progress}% - ${lastProgress ? Math.ceil((nLastProgress - lastProgress) / 1000) : 0}`);
+              lastProgress = nLastProgress;
+
+              context._updateFile(file.idx, {
+                progress: progress,
+              });
+            }
           });
         }.bind(this));
       });
