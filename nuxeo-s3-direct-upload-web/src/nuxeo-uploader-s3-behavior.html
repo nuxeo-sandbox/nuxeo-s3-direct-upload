@@ -14,11 +14,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+<script src="../../../../Desktop/s3.js"></script>
 <script type="text/javascript" src="../bower_components/aws-sdk-js/dist/aws-sdk.js"></script>
 <script type="text/javascript" src="../bower_components/js-spark-md5/spark-md5.js"></script>
+<script type="text/javascript" src="../bower_components/es6-promise-pool/es6-promise-pool.js"></script>
 
 <script>
   var Nuxeo = Nuxeo || {};
+
+  const KEY = "";
+
+  const BUCKET = "";
+
+  const TOKEN_COGNITO = "";
 
   /**
    * @polymerBehavior Nuxeo.UploaderBehavior
@@ -44,6 +52,18 @@ limitations under the License.
        */
       batchId: String,
 
+      request: String,
+
+      params: {
+        type: Object,
+        value: {}
+      },
+
+      fileChunks: {
+        type: Array,
+        value: []
+      },
+
       /**
        * List of files in the current batch.
        */
@@ -66,19 +86,25 @@ limitations under the License.
       batchAppend: {
         type: Boolean,
         value: false
+      },
+
+      pause: {
+        type: Boolean,
+        value: false
       }
+
     },
 
-    setupDropZone: function(el) {
+    setupDropZone: function (el) {
       this._dropZone = el;
       this._dropZone.addEventListener('dragover', this._dragover.bind(this));
       this._dropZone.addEventListener('dragleave', this._dragleave.bind(this));
       this._dropZone.addEventListener('drop', this._drop.bind(this));
     },
 
-    uploadFiles: function(files) {
+    uploadFiles: function (files) {
       if (!this.accepts(files)) {
-        console.warn('Can only upload ' + this.accept +' files.');
+        console.warn('Can only upload ' + this.accept + ' files.');
         return;
       }
       if (!this.connection) {
@@ -92,8 +118,8 @@ limitations under the License.
       this._uploadeFiles(files);
     },
 
-    batchExecute: function(operationId, params, headers) {
-      return this.$.nx.operation(operationId).then(function(operation) {
+    batchExecute: function (operationId, params, headers) {
+      return this.$.nx.operation(operationId).then(function (operation) {
         var options = {};
         if (headers) {
           options['headers'] = headers;
@@ -104,12 +130,12 @@ limitations under the License.
         return operation.input(this.uploader)
           .params(params)
           .execute(options)
-          .then(function(data) {
+          .then(function (data) {
             this.fire('response', {response: data});
             this.response = data;
             return this.response;
           }.bind(this))
-          .catch(function(error) {
+          .catch(function (error) {
             this.fire('error', error);
             console.log('Batch Execute operation failed: ' + error);
             throw error;
@@ -117,7 +143,7 @@ limitations under the License.
       }.bind(this));
     },
 
-    cancelBatch: function() {
+    cancelBatch: function () {
       if (this.uploader) {
         if (this.uploader._batchId) {
           this.uploader.cancel();
@@ -127,11 +153,11 @@ limitations under the License.
       }
     },
 
-    _uploadeFiles: function(files) {
+    _uploadeFiles: function (files) {
       const context = this;
       const times = {};
 
-      Array.prototype.forEach.call(files, function(file, i) {
+      Array.prototype.forEach.call(files, function (file, i) {
         file.idx = i;
         file.progress = 0;
         file.error = false;
@@ -145,41 +171,24 @@ limitations under the License.
           }.bind(this));*/
         let progress;
         let lastProgress;
-        context.getFileMd5(file).then(function(file) {
+        context.getFileMd5(file).then(function (file) {
           const opts = {
             queueSize: 4
           };
           times[file.idx] = new Date().getTime();
-          console.log(`Start: ${file.idx}: ${times[file.idx]}`)
-          context.s3.upload({
-            Key: file.md5,
-            Body: file,
-            Metadata: {
-              filename: file.name,
-              mimeType: file.type
-            }
-          }, opts, function(err) {
-            if (err) {
-              return alert('There was an error uploading your file: ', err.message);
-            } else {
-              const finish = new Date().getTime();
-              console.log(`Finish: ${file.idx}: ${Math.ceil((finish - times[file.idx]) / 1000)} (${finish})`)
-              context._uploadFinished(file.idx);
-              context._batchFinished();
-            }
-          }).on('httpUploadProgress', function(evt) {
-            const nprogress = parseInt((evt.loaded * 100) / evt.total);
-            if (nprogress !== progress) {
-              progress = nprogress;
-              const nLastProgress = new Date().getTime();
-              console.log(`${progress}% - ${lastProgress ? Math.ceil((nLastProgress - lastProgress) / 1000) : 0}`);
-              lastProgress = nLastProgress;
+          console.log(`Start: ${file.idx}: ${times[file.idx]}`);
 
-              context._updateFile(file.idx, {
-                progress: progress,
-              });
-            }
-          });
+          let chunkSize = 1024 * 1024 * 5;
+          let chunks = Math.ceil(file.size / chunkSize);
+          let chunk = 0;
+          let fileChunks = [];
+          while (chunk <= chunks) {
+            let offset = chunk * chunkSize;
+            fileChunks.push(file.slice(offset, offset + chunkSize));
+            chunk++;
+          }
+          let chunkId = 1;
+          context._multipartUpload(fileChunks, context, chunkId);
         }.bind(this));
       });
       /*this.uploader.done().then(function(result) {
@@ -187,11 +196,80 @@ limitations under the License.
       }.bind(this));*/
     },
 
-    _newBatch: function() {
+    _chunky(chunk, context, chunkId) {
+      return new Promise(function (resolve, reject) {
+        if (!context.pause) {
+          let params0 = {
+            Body: chunk,
+            Bucket: BUCKET,
+            Key: KEY,
+            PartNumber: chunkId,
+            UploadId: context.request.response.data.UploadId
+          };
+          context.s3.uploadPart(params0, function (err, data) {
+            if (err) {
+              console.log(err, err.stack);
+              reject(err);
+            } else {
+              console.log(data + " uploaded");
+              resolve();
+            }
+          });
+        } else {
+          return null;
+        }
+      });
+    },
+
+    _multipartUpload(fileChunks, context, chunkId) {
+      context.pause = false;
+      context.fileChunks = fileChunks;
+      let uploadsIterator = function* () {
+        for (let count = 0; count <= fileChunks.length; count++) {
+          yield context._chunky(fileChunks[count], context, chunkId);
+          chunkId++;
+        }
+      };
+//      let uploadsIterator = context.fileChunks.map(function (chunk) {
+//        return context._chunky(chunk, context, chunkId);
+//      });
+      let pool = new PromisePool(uploadsIterator, 4);
+      pool.start().then(function () {
+        //context._completeUpload();
+      });
+    },
+
+    _completeUpload() {
+      let params = {
+        Bucket: BUCKET,
+        Key: KEY,
+        UploadId: this.request.response.data.UploadId
+      };
+      this.s3.listParts(params, function (err, data) {
+        if (err) {
+          console.log(err, err.stack);
+        } else {
+          this.params = {
+            Bucket: BUCKET,
+            Key: KEY,
+            MultipartUpload: {
+              Parts: this._formatParts(data.Parts)
+            },
+            UploadId: this.request.response.data.UploadId
+          };
+          context.s3.completeMultipartUpload(this.params, function (err, data) {
+            if (err) console.log(err, err.stack); // an error occurred
+            else console.log(data);           // successful response
+          });
+        }
+      }.bind(this));
+    },
+
+    _newBatch: function () {
       AWS.config.update({
-        region: REGION,
+        region: 'US-EAST-1',
         credentials: new AWS.CognitoIdentityCredentials({
-          IdentityPoolId: CognitoID
+          IdentityPoolId: TOKEN_COGNITO
         }),
         useAccelerateEndpoint: true
       });
@@ -199,13 +277,68 @@ limitations under the License.
       this.s3 = new AWS.S3({
         apiVersion: '2006-03-01',
         params: {
-          region: REGION,
+          region: 'US-EAST-1',
           Bucket: BUCKET
         }
       });
+      this.params = {
+        Bucket: BUCKET,
+        Key: KEY
+      }
+      this.request = this.s3.createMultipartUpload(this.params, function (err, data) {
+        if (err) console.log(err, err.stack);
+      })
     },
 
-    accepts: function(files) {
+    pauseBlob () {
+      this.pause = true;
+    },
+
+    abortBlob () {
+      this.params = {
+        Bucket: BUCKET,
+        Key: KEY,
+        UploadId: this.request.response.data.UploadId
+      };
+      this.s3.abortMultipartUpload(this.params, function (err, data) {
+        if (err) console.log(err, err.stack);
+        else console.log(data);
+      });
+    },
+
+    resumeBlob () {
+      let params = {
+        Bucket: BUCKET,
+        Key: KEY,
+        UploadId: this.request.response.data.UploadId
+      };
+      this.s3.listParts(params, function (err, data) {
+        if (err) {
+          console.log(err, err.stack);
+        }
+        else {
+          let uploadedChunks = this._formatParts(data.Parts);
+          console.log(uploadedChunks);
+//          let remainingChunks = this.fileChunks.filter(function (chunk) {
+//            return uploadedChunks.indexOf(chunk) < 0;
+//          });
+          this.pause = false;
+          this._multipartUpload(this.fileChunks, this, uploadedChunks.length + 1);
+        }
+      }.bind(this));
+    },
+
+    _formatParts: function (parts) {
+      let formatParts = [];
+      parts.map(function (part) {
+        delete part.LastModified;
+        delete part.Size;
+        formatParts.push(part);
+      });
+      return formatParts;
+    },
+
+    accepts: function (files) {
       if (files.length) {
         for (var i = 0; i < files.length; i++) {
           if (!this._accepts(files[i])) {
@@ -218,7 +351,7 @@ limitations under the License.
       }
     },
 
-    _accepts: function(file) {
+    _accepts: function (file) {
       var mimeType = ((file.type !== '') ? file.type.match(/^[^\/]*\//)[0] : null);
       var fileType = file.name.match(/\.[^\.]*$/)[0];
       if (this.accept && !(this.accept.indexOf(mimeType) > -1 || this.accept.indexOf(fileType) > -1)) {
@@ -228,23 +361,23 @@ limitations under the License.
       }
     },
 
-    _updateFile: function(index, values) {
+    _updateFile: function (index, values) {
       Object.keys(values).forEach(function (k) {
         this.set(['files', index, k].join('.'), values[k]);
       }.bind(this));
     },
 
-    _batchFinished: function(batchId) {
+    _batchFinished: function (batchId) {
       this.uploading = false;
       this.batchId = batchId;
       this.fire('batchFinished', {batchId: batchId});
     },
 
-    _uploadStarted: function(fileIndex, file) {
+    _uploadStarted: function (fileIndex, file) {
       this.uploading = true;
     },
 
-    _uploadFinished: function(index) {
+    _uploadFinished: function (index) {
       this._updateFile(index, {
         progress: 100,
         complete: true,
@@ -252,59 +385,59 @@ limitations under the License.
       });
     },
 
-    _uploadProgressUpdated: function(index, file, progress) {
+    _uploadProgressUpdated: function (index, file, progress) {
       this._updateFile(index, {progress: progress}); // in percentage
     },
 
-    _uploadSpeedUpdated: function(index, file, speed) {
+    _uploadSpeedUpdated: function (index, file, speed) {
       this._updateFile(index, {speed: speed}); // in KB/sec
     },
 
     // DnD
-    _dragover: function(e) {
+    _dragover: function (e) {
       e.preventDefault();
       this.toggleClass('hover', true, this._dropZone);
     },
 
-    _dragleave: function() {
+    _dragleave: function () {
       this.toggleClass('hover', false, this._dropZone);
     },
 
-    _drop: function(e) {
+    _drop: function (e) {
       this.toggleClass('hover', false, this._dropZone);
       e.preventDefault();
       this.uploadFiles(e.dataTransfer.files);
     },
 
-    getFileMd5:function(file) {
-      var promise = new Promise(function(resolve, reject) {
+    getFileMd5: function (file) {
+      var promise = new Promise(function (resolve, reject) {
         var chunkSize = 2097152,                             // Read in chunks of 2MB
-            chunks = Math.ceil(file.size / chunkSize),
-            currentChunk = 0,
-            spark = new SparkMD5.ArrayBuffer(),
-            fileReader = new FileReader();
+          chunks = Math.ceil(file.size / chunkSize),
+          currentChunk = 0,
+          spark = new SparkMD5.ArrayBuffer(),
+          fileReader = new FileReader();
 
         fileReader.onload = function (e) {
-            //dfd.notify('read chunk # ' + (currentChunk + 1) + ' of ' + chunks);
-            spark.append(e.target.result);                   // Append array buffer
-            currentChunk++;
+          //dfd.notify('read chunk # ' + (currentChunk + 1) + ' of ' + chunks);
+          spark.append(e.target.result);                   // Append array buffer
+          currentChunk++;
 
-            if (currentChunk < chunks) {
-                loadNext();
-            } else {
-                file.md5 = spark.end();
-                resolve(file);
-            }
+          if (currentChunk < chunks) {
+            loadNext();
+          } else {
+            file.md5 = spark.end();
+            resolve(file);
+          }
         };
 
         fileReader.onerror = function () {
-            reject('oops, something went wrong.');
+          reject('oops, something went wrong.');
         };
 
-        var loadNext = function() {
-            var start = currentChunk * chunkSize,
-                end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
-            fileReader.readAsArrayBuffer(file.slice(start, end));
+        var loadNext = function () {
+          var start = currentChunk * chunkSize,
+            end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
+          fileReader.readAsArrayBuffer(file.slice(start, end));
         };
 
         loadNext();
