@@ -16,11 +16,12 @@
     "iron-selector": "PolymerElements/iron-selector#^1.0.0",
     "paper-icon-button": "PolymerElements/paper-icon-button#~1.1.0",
     "polymer": "Polymer/polymer#^1.6.0",
-	"aws-sdk-js": "aws/aws-sdk-js#^2.8.0",
-	"paper-elements": "PolymerElements/paper-elements#^1.0.1",
-	"nuxeo-elements": "nuxeo/nuxeo-elements#master",
+    "aws-sdk-js": "aws/aws-sdk-js#^2.8.0",
+    "paper-elements": "PolymerElements/paper-elements#^1.0.1",
+    "nuxeo-elements": "nuxeo/nuxeo-elements#master",
     "nuxeo-ui-elements": "nuxeo/nuxeo-ui-elements#master",
-	"js-spark-md5": "satazor/js-spark-md5#^3.0.0"
+    "js-spark-md5": "satazor/js-spark-md5#^3.0.0",
+    "es6-promise-pool": "^2.5.0"
   },
   "devDependencies": {
     "web-component-tester": "^4.0.0"
