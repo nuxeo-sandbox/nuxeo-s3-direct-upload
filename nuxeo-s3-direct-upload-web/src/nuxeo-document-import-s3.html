@@ -347,6 +347,7 @@ limitations under the License.
               <div class="importActions horizontal layout">
                 <nuxeo-slot slot="FILE_UPLOAD_ACTIONS" empty="{{!hasContributions}}"></nuxeo-slot>
               </div>
+
             </div>
           </template>
           <template is="dom-if" if="[[hasFiles]]">
@@ -376,10 +377,6 @@ limitations under the License.
                         <template is="dom-if" if="[[!file.complete]]">
                           <paper-progress value="[[file.progress]]"></paper-progress>
                         </template>
-                      </div>
-                      <div class="clear" hidden$="[[!file.complete]]">
-                        <paper-icon-button icon="nuxeo:remove" on-tap="_removeBlob"></paper-icon-button>
-                        <paper-tooltip>[[i18n('command.remove')]]</paper-tooltip>
                       </div>
                     </div>
                   </template>
@@ -425,8 +422,11 @@ limitations under the License.
         <div class="buttons horizontal end-justified layout">
           <div class="flex start-justified">
             <paper-button noink dialog-dismiss
-                          on-tap="_cancel"
+                          on-tap="pauseBlob"
                           hidden$="[[_creating]]">[[i18n('command.cancel')]]</paper-button>
+            <paper-button noink dialog-dismiss
+                          on-tap="resumeBlob"
+                          hidden$="[[_creating]]">Resume</paper-button>
           </div>
           <paper-button noink
                         class="primary"
