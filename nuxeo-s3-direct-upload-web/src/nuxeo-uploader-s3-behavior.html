@@ -22,11 +22,11 @@ limitations under the License.
 <script>
   var Nuxeo = Nuxeo || {};
 
-  const KEY = "";
+  const KEY = "vlad";
 
-  const BUCKET = "";
+  const BUCKET = "FIXME";
 
-  const TOKEN_COGNITO = "";
+  const TOKEN_COGNITO = "FIXME";
 
   /**
    * @polymerBehavior Nuxeo.UploaderBehavior
@@ -91,6 +91,11 @@ limitations under the License.
       pause: {
         type: Boolean,
         value: false
+      },
+
+      batchReady:{
+        type: Boolean,
+        value: false
       }
 
     },
@@ -112,8 +117,8 @@ limitations under the License.
       }
       if (!this.batchAppend || !this.uploader) {
         this.files = [];
-        //this._newBatch().then(this._uploadeFiles.bind(this, files));
-        this._newBatch();
+        this._newBatch(files);
+        return;
       }
       this._uploadeFiles(files);
     },
@@ -182,7 +187,7 @@ limitations under the License.
           let chunks = Math.ceil(file.size / chunkSize);
           let chunk = 0;
           let fileChunks = [];
-          while (chunk <= chunks) {
+          while (chunk < chunks) {
             let offset = chunk * chunkSize;
             fileChunks.push(file.slice(offset, offset + chunkSize));
             chunk++;
@@ -225,17 +230,14 @@ limitations under the License.
       context.pause = false;
       context.fileChunks = fileChunks;
       let uploadsIterator = function* () {
-        for (let count = 0; count <= fileChunks.length; count++) {
+        for (let count = 0; count < fileChunks.length; count++) {
           yield context._chunky(fileChunks[count], context, chunkId);
           chunkId++;
         }
       };
-//      let uploadsIterator = context.fileChunks.map(function (chunk) {
-//        return context._chunky(chunk, context, chunkId);
-//      });
       let pool = new PromisePool(uploadsIterator, 4);
       pool.start().then(function () {
-        //context._completeUpload();
+        context._completeUpload();
       });
     },
 
@@ -257,7 +259,7 @@ limitations under the License.
             },
             UploadId: this.request.response.data.UploadId
           };
-          context.s3.completeMultipartUpload(this.params, function (err, data) {
+          this.s3.completeMultipartUpload(this.params, function (err, data) {
             if (err) console.log(err, err.stack); // an error occurred
             else console.log(data);           // successful response
           });
@@ -265,7 +267,7 @@ limitations under the License.
       }.bind(this));
     },
 
-    _newBatch: function () {
+    _newBatch: function (files) {
       AWS.config.update({
         region: 'US-EAST-1',
         credentials: new AWS.CognitoIdentityCredentials({
@@ -285,9 +287,11 @@ limitations under the License.
         Bucket: BUCKET,
         Key: KEY
       }
+      this.batchReady = false;
       this.request = this.s3.createMultipartUpload(this.params, function (err, data) {
         if (err) console.log(err, err.stack);
-      })
+        else this._uploadeFiles(files);
+      }.bind(this));
     },
 
     pauseBlob () {
