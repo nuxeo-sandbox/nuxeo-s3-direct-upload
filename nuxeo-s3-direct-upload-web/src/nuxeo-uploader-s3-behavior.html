@@ -22,11 +22,9 @@ limitations under the License.
 <script>
   var Nuxeo = Nuxeo || {};
 
-  const KEY = "vlad";
+  const KEY = "vlad-work";
 
-  const BUCKET = "FIXME";
-
-  const TOKEN_COGNITO = "FIXME";
+  const STORAGE_UPLOAD = 'nx_upload';
 
   /**
    * @polymerBehavior Nuxeo.UploaderBehavior
@@ -96,6 +94,10 @@ limitations under the License.
       batchReady:{
         type: Boolean,
         value: false
+      },
+
+      start:{
+        type: Date
       }
 
     },
@@ -158,6 +160,37 @@ limitations under the License.
       }
     },
 
+    _store: function (file, context) {
+      let upload = {
+        'uploadId': context.request.response.data.UploadId,
+        'md5': file.md5
+      };
+      localStorage.setItem(STORAGE_UPLOAD, JSON.stringify(upload));
+    },
+
+    _storageCleanup: function () {
+      localStorage.removeItem(STORAGE_UPLOAD);
+    },
+
+    _getLastUpload: function () {
+      let upload = JSON.parse(localStorage.getItem(STORAGE_UPLOAD));
+      this._storageCleanup();
+      return upload;
+    },
+
+    _getChunks: function (file) {
+      let chunkSize = 1024 * 1024 * 5;
+      let chunks = Math.ceil(file.size / chunkSize);
+      let chunk = 0;
+      let fileChunks = [];
+      while (chunk < chunks) {
+        let offset = chunk * chunkSize;
+        fileChunks.push(file.slice(offset, offset + chunkSize));
+        chunk++;
+      }
+      return fileChunks;
+    },
+
     _uploadeFiles: function (files) {
       const context = this;
       const times = {};
@@ -177,22 +210,21 @@ limitations under the License.
         let progress;
         let lastProgress;
         context.getFileMd5(file).then(function (file) {
+
+          // Store md5 and upload id
+          context._store(file, context);
+
           const opts = {
             queueSize: 4
           };
           times[file.idx] = new Date().getTime();
           console.log(`Start: ${file.idx}: ${times[file.idx]}`);
 
-          let chunkSize = 1024 * 1024 * 5;
-          let chunks = Math.ceil(file.size / chunkSize);
-          let chunk = 0;
-          let fileChunks = [];
-          while (chunk < chunks) {
-            let offset = chunk * chunkSize;
-            fileChunks.push(file.slice(offset, offset + chunkSize));
-            chunk++;
-          }
+          let fileChunks = context._getChunks(file);
           let chunkId = 1;
+
+          context.start = new Date().getTime();
+
           context._multipartUpload(fileChunks, context, chunkId);
         }.bind(this));
       });
@@ -230,18 +262,18 @@ limitations under the License.
       context.pause = false;
       context.fileChunks = fileChunks;
       let uploadsIterator = function* () {
-        for (let count = 0; count < fileChunks.length; count++) {
+        for (let count = chunkId - 1; count < fileChunks.length; count++) {
           yield context._chunky(fileChunks[count], context, chunkId);
           chunkId++;
         }
       };
       let pool = new PromisePool(uploadsIterator, 4);
       pool.start().then(function () {
-        context._completeUpload();
+        context._completeUpload(context);
       });
     },
 
-    _completeUpload() {
+    _completeUpload(context) {
       let params = {
         Bucket: BUCKET,
         Key: KEY,
@@ -260,9 +292,17 @@ limitations under the License.
             UploadId: this.request.response.data.UploadId
           };
           this.s3.completeMultipartUpload(this.params, function (err, data) {
-            if (err) console.log(err, err.stack); // an error occurred
-            else console.log(data);           // successful response
-          });
+            if (err) {
+              console.log(err, err.stack);
+            }
+            else {
+              let timeDiff = new Date().getTime() - context.start;
+              let seconds = timeDiff / 1000;
+              console.log("Time elapsed: " + seconds + " seconds");
+              console.log(data);
+              this._storageCleanup();
+            }
+          }.bind(this));
         }
       }.bind(this));
     },
@@ -289,8 +329,24 @@ limitations under the License.
       }
       this.batchReady = false;
       this.request = this.s3.createMultipartUpload(this.params, function (err, data) {
-        if (err) console.log(err, err.stack);
-        else this._uploadeFiles(files);
+        if (err) {
+          console.log(err, err.stack);
+        } else {
+          let upload = this._getLastUpload();
+          if (upload === null || typeof(upload) === 'undefined') {
+            this._uploadeFiles(files);
+            return;
+          }
+          let file = files[0];
+          this.getFileMd5(file).then(function (file) {
+            if (file.md5 === upload.md5) {
+              this.fileChunks = this._getChunks(file);
+              this.resumeBlob(upload.uploadId);
+              return;
+            }
+            this._uploadeFiles(files);
+          }.bind(this));
+        }
       }.bind(this));
     },
 
@@ -310,7 +366,10 @@ limitations under the License.
       });
     },
 
-    resumeBlob () {
+    resumeBlob(uploadId) {
+      if (uploadId.type === null || typeof(uploadId.type) === 'undefined') {
+        this.request.response.data.UploadId = uploadId;
+      }
       let params = {
         Bucket: BUCKET,
         Key: KEY,
@@ -319,13 +378,8 @@ limitations under the License.
       this.s3.listParts(params, function (err, data) {
         if (err) {
           console.log(err, err.stack);
-        }
-        else {
+        } else {
           let uploadedChunks = this._formatParts(data.Parts);
-          console.log(uploadedChunks);
-//          let remainingChunks = this.fileChunks.filter(function (chunk) {
-//            return uploadedChunks.indexOf(chunk) < 0;
-//          });
           this.pause = false;
           this._multipartUpload(this.fileChunks, this, uploadedChunks.length + 1);
         }
