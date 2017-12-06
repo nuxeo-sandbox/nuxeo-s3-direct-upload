@@ -18,6 +18,7 @@ limitations under the License.
 <script type="text/javascript" src="../bower_components/aws-sdk-js/dist/aws-sdk.js"></script>
 <script type="text/javascript" src="../bower_components/js-spark-md5/spark-md5.js"></script>
 <script type="text/javascript" src="../bower_components/es6-promise-pool/es6-promise-pool.js"></script>
+<script type="text/javascript" src="../node_modules/crypto-js/crypto-js.js"></script>
 
 <script>
   var Nuxeo = Nuxeo || {};
@@ -25,6 +26,8 @@ limitations under the License.
   const KEY = "vlad-work";
 
   const STORAGE_UPLOAD = 'nx_upload';
+
+
 
   /**
    * @polymerBehavior Nuxeo.UploaderBehavior
@@ -236,21 +239,27 @@ limitations under the License.
     _chunky(chunk, context, chunkId) {
       return new Promise(function (resolve, reject) {
         if (!context.pause) {
-          let params0 = {
-            Body: chunk,
-            Bucket: BUCKET,
-            Key: KEY,
-            PartNumber: chunkId,
-            UploadId: context.request.response.data.UploadId
-          };
-          context.s3.uploadPart(params0, function (err, data) {
-            if (err) {
-              console.log(err, err.stack);
-              reject(err);
-            } else {
-              console.log(data + " uploaded");
-              resolve();
-            }
+          context.getFileMd5(chunk).then(function (chunk) {
+            //let md5hex = SparkMD5.hash(chunk.md5);
+            var hash = CryptoJS.MD5(chunk.md5);
+            let md5hex = hash.toString(CryptoJS.enc.Base64);
+            let params0 = {
+              Body: chunk,
+              //ContentMD5: md5hex,
+              Bucket: BUCKET,
+              Key: KEY,
+              PartNumber: chunkId,
+              UploadId: context.request.response.data.UploadId
+            };
+            context.s3.uploadPart(params0, function (err, data) {
+              if (err) {
+                console.log(err, err.stack);
+                reject(err);
+              } else {
+                console.log(data + " uploaded");
+                resolve();
+              }
+            });
           });
         } else {
           return null;
