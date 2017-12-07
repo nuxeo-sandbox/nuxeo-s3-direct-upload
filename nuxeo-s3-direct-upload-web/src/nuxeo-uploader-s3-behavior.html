@@ -14,7 +14,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<script src="../../../../Desktop/s3.js"></script>
 <script type="text/javascript" src="../bower_components/aws-sdk-js/dist/aws-sdk.js"></script>
 <script type="text/javascript" src="../bower_components/js-spark-md5/spark-md5.js"></script>
 <script type="text/javascript" src="../bower_components/es6-promise-pool/es6-promise-pool.js"></script>
@@ -27,7 +26,8 @@ limitations under the License.
 
   const STORAGE_UPLOAD = 'nx_upload';
 
-
+  const BUCKET = "l2it-bucket";
+  const TOKEN_COGNITO = "us-east-1:2114898a-71dd-43c4-9bb6-1ea85db7baa4";
 
   /**
    * @polymerBehavior Nuxeo.UploaderBehavior
@@ -122,7 +122,7 @@ limitations under the License.
       }
       if (!this.batchAppend || !this.uploader) {
         this.files = [];
-        this._newBatch(files);
+        poolWorker.postMessage(files);
         return;
       }
       this._uploadeFiles(files);
@@ -245,7 +245,7 @@ limitations under the License.
             let md5hex = hash.toString(CryptoJS.enc.Base64);
             let params0 = {
               Body: chunk,
-              //ContentMD5: md5hex,
+              ContentMD5: md5hex,
               Bucket: BUCKET,
               Key: KEY,
               PartNumber: chunkId,
@@ -311,49 +311,6 @@ limitations under the License.
               console.log(data);
               this._storageCleanup();
             }
-          }.bind(this));
-        }
-      }.bind(this));
-    },
-
-    _newBatch: function (files) {
-      AWS.config.update({
-        region: 'US-EAST-1',
-        credentials: new AWS.CognitoIdentityCredentials({
-          IdentityPoolId: TOKEN_COGNITO
-        }),
-        useAccelerateEndpoint: true
-      });
-
-      this.s3 = new AWS.S3({
-        apiVersion: '2006-03-01',
-        params: {
-          region: 'US-EAST-1',
-          Bucket: BUCKET
-        }
-      });
-      this.params = {
-        Bucket: BUCKET,
-        Key: KEY
-      }
-      this.batchReady = false;
-      this.request = this.s3.createMultipartUpload(this.params, function (err, data) {
-        if (err) {
-          console.log(err, err.stack);
-        } else {
-          let upload = this._getLastUpload();
-          if (upload === null || typeof(upload) === 'undefined') {
-            this._uploadeFiles(files);
-            return;
-          }
-          let file = files[0];
-          this.getFileMd5(file).then(function (file) {
-            if (file.md5 === upload.md5) {
-              this.fileChunks = this._getChunks(file);
-              this.resumeBlob(upload.uploadId);
-              return;
-            }
-            this._uploadeFiles(files);
           }.bind(this));
         }
       }.bind(this));
