@@ -1,0 +1,16 @@
+<component name="org.nuxeo.ecm.platform.aws.s3.refstorage" version="1.0.0">
+    <extension target="org.nuxeo.ecm.core.blob.BlobManager" point="configuration">
+        <blobprovider name="S3Ref">
+            <class>org.nuxeo.s3.blob.S3RefBinaryManager</class>
+            <property name="awsid">AKIAJR7J5DZQFKQ6RB2A</property>
+            <property name="awssecret">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</property>
+            <property name="region">eu-west-1</property>
+            <property name="bucket">test-upload-lduarte</property>
+            <property name="bucket.prefix">/</property>
+            <property name="target.bucket">test-upload-lduarte-2</property>
+            <property name="target.bucket.path">foo/</property>
+            <property name="directdownload">true</property>
+            <property name="directdownload.expire">3600</property>
+        </blobprovider>
+    </extension>
+</component>
