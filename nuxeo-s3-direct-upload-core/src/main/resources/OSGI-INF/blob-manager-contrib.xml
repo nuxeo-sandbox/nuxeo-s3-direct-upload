@@ -1,16 +1,58 @@
 <component name="org.nuxeo.ecm.platform.aws.s3.refstorage" version="1.0.0">
+    <require>org.nuxeo.ecm.core.storage.cloud.managment.contrib</require>
+
+    <extension target="org.nuxeo.runtime.kv.KeyValueService" point="configuration">
+        <store name="s3kvs" class="org.nuxeo.runtime.kv.MemKeyValueStore">
+        </store>
+    </extension>
+
     <extension target="org.nuxeo.ecm.core.blob.BlobManager" point="configuration">
-        <blobprovider name="S3Ref">
-            <class>org.nuxeo.s3.blob.S3RefBinaryManager</class>
+        <blobprovider name="s3kvs">
+            <class>org.nuxeo.ecm.core.storage.sql.S3BinaryManager</class>
             <property name="awsid">AKIAJR7J5DZQFKQ6RB2A</property>
             <property name="awssecret">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</property>
             <property name="region">eu-west-1</property>
             <property name="bucket">test-upload-lduarte</property>
             <property name="bucket.prefix">/</property>
-            <property name="target.bucket">test-upload-lduarte-2</property>
-            <property name="target.bucket.path">foo/</property>
             <property name="directdownload">true</property>
             <property name="directdownload.expire">3600</property>
+            <property name="cachesize">100MB</property>
+            <property name="connection.max">50</property>
+            <property name="connection.retry">3</property>
+            <property name="connection.timeout">50000</property>
+            <property name="socket.timeout">50000</property>
         </blobprovider>
+    </extension>
+
+    <extension target="org.nuxeo.ecm.core.transientstore.TransientStorageComponent" point="store">
+        <store name="s3kvs" class="org.nuxeo.ecm.core.transientstore.keyvalueblob.KeyValueBlobTransientStore">
+            <targetMaxSizeMB>1</targetMaxSizeMB>
+            <absoluteMaxSizeMB>-1</absoluteMaxSizeMB>
+            <firstLevelTTL>120</firstLevelTTL>
+            <secondLevelTTL>10</secondLevelTTL>
+        </store>
+    </extension>
+
+    <extension target="org.nuxeo.ecm.automation.server.BatchManager"
+               point="handlers">
+        <batchHandler>
+            <name>s3</name>
+            <class>org.nuxeo.s3.S3DirectBatchHandler</class>
+            <property name="transientStore">s3kvs</property>
+            <property name="awsSecretKeyId">AKIAIFOCXLPP274ENVZQ</property>
+            <property name="awsSecretAccessKey">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</property>
+            <property name="awsRegion">eu-west-1</property>
+            <property name="awsBucket">test-upload-lduarte</property>
+            <property name="roleArn">arn:aws:iam::364459464794:role/test-upload-bucket</property>
+            <property name="s3AccelerationSupported">true</property>
+        </batchHandler>
+    </extension>
+
+    <extension target="org.nuxeo.ecm.core.blob.DocumentBlobManager" point="configuration">
+        <blobdispatcher>
+            <class>org.nuxeo.ecm.core.blob.DefaultBlobDispatcher</class>
+            <property name="fakeschema:fakeprop=fakevalue">s3kvs</property>
+            <property name="default">default</property>
+        </blobdispatcher>
     </extension>
 </component>
