@@ -6,5 +6,4 @@ Bundle-Version: 1.0.0
 Bundle-Name: nuxeo-s3-direct-upload-core
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.nuxeo.s3.upload.nuxeo-s3-direct-upload-core;singleton=true
-Nuxeo-Component: OSGI-INF/marshallers-contrib.xml,
-               OSGI-INF/blob-manager-contrib.xml
+Nuxeo-Component: OSGI-INF/blob-manager-contrib.xml
