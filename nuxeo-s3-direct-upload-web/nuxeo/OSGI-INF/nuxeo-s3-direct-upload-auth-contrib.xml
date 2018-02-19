@@ -1,17 +1,17 @@
-<component name="org.nuxeo.s3.upload.authentication.polymer.s3upload">
+<component name="org.nuxeo.ecm.distribution.authentication.polymer.nuxeo-s3-direct-upload">
 
   <extension point="startURL" target="org.nuxeo.ecm.platform.ui.web.auth.service.PluggableAuthenticationService">
     <startURLPattern>
       <patterns>
-        <pattern>s3upload/</pattern>
+        <pattern>app/</pattern>
       </patterns>
     </startURLPattern>
   </extension>
 
   <!-- Uncomment this to allow browsing application without authentication
   <extension point="openUrl" target="org.nuxeo.ecm.platform.ui.web.auth.service.PluggableAuthenticationService">
-    <openUrl name="s3upload">
-      <grantPattern>s3upload</grantPattern>
+    <openUrl name="nuxeo-s3-direct-upload">
+      <grantPattern>app</grantPattern>
     </openUrl>
   </extension>
   -->

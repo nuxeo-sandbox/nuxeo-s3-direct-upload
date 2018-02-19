@@ -17,7 +17,7 @@
   ~  Contributors:
   ~     Nelson Silva <nsilva@nuxeo.com>
   -->
-<project name="S3upload" default="build" basedir=".">
+<project name="Nuxeo s3 direct upload" default="build" basedir=".">
 
   <!-- set executable names based on OS family -->
   <condition property="cmd.npm" value="npm.cmd" else="npm">

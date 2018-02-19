@@ -118,6 +118,7 @@ limitations under the License.
     </style>
 
     <nuxeo-connection id="nx"></nuxeo-connection>
+    <nuxeo-resource id="s3Creds" method="GET" path="/creds/config/s3"></nuxeo-resource>
     <nuxeo-document id="doc" doc-id="[[document.uid]]" data="{{document}}" enrichers="preview"></nuxeo-document>
     <nuxeo-operation id="bulkAttach" op="BlobHolder.AttachOnCurrentDocument"></nuxeo-operation>
 
@@ -232,7 +233,8 @@ limitations under the License.
             key: file.md5,
             filename: file.name,
             length: file.size,
-            mimeType: file.type
+            mimeType: file.type,
+            bucket: file.bucket
           };
           this._handleBlobUploaded();
         }
@@ -257,7 +259,8 @@ limitations under the License.
           this.document.properties[this.xpath] = {
             'providerId': file.providerId,
             'user': file.user,
-            'fileId': file.fileId
+            'fileId': file.fileId,
+            'name': "BatatasFritas"
           };
           this._handleBlobUploaded();
         }

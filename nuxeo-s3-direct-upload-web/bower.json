@@ -5,25 +5,30 @@
   ],
   "license": "https://polymer.github.io/LICENSE.txt",
   "dependencies": {
-    "app-layout": "PolymerElements/app-layout#^0.10.0",
-    "app-route": "PolymerElements/app-route#^0.9.0",
-    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.0.0",
-    "iron-icon": "PolymerElements/iron-icon#^1.0.0",
-    "iron-iconset-svg": "PolymerElements/iron-iconset-svg#^1.0.0",
-    "iron-localstorage": "PolymerElements/iron-localstorage#^1.0.0",
-    "iron-media-query": "PolymerElements/iron-media-query#^1.0.0",
-    "iron-pages": "PolymerElements/iron-pages#^1.0.0",
-    "iron-selector": "PolymerElements/iron-selector#^1.0.0",
-    "paper-icon-button": "PolymerElements/paper-icon-button#~1.1.0",
-    "polymer": "Polymer/polymer#^1.6.0",
-	"aws-sdk-js": "aws/aws-sdk-js#^2.8.0",
-	"paper-elements": "PolymerElements/paper-elements#^1.0.1",
-	"nuxeo-elements": "nuxeo/nuxeo-elements#master",
+    "app-layout": "PolymerElements/app-layout#^2.0.0",
+    "app-route": "PolymerElements/app-route#^2.0.0",
+    "iron-a11y-keys": "PolymerElements/iron-a11y-keys#^2.0.0",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^2.0.0",
+    "iron-iconset-svg": "PolymerElements/iron-iconset-svg#^2.0.0",
+    "iron-media-query": "PolymerElements/iron-media-query#^2.0.0",
+    "iron-pages": "PolymerElements/iron-pages#^2.0.0",
+    "iron-selector": "PolymerElements/iron-selector#^2.0.0",
+    "paper-icon-button": "PolymerElements/paper-icon-button#^2.0.0",
+    "polymer": "Polymer/polymer#^2.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^1.0.0",
+    "iron-icon": "PolymerElements/iron-icon#^2.0.0",
+    "iron-localstorage": "PolymerElements/iron-localstorage#^2.0.0",
+    "nuxeo-elements": "nuxeo/nuxeo-elements#master",
     "nuxeo-ui-elements": "nuxeo/nuxeo-ui-elements#master",
-	"js-spark-md5": "satazor/js-spark-md5#^3.0.0"
+    "aws-sdk-js": "aws/aws-sdk-js#^2.8.0",
+    "js-spark-md5": "satazor/js-spark-md5#^3.0.0",
+    "evaporatejs": "^2.1.4"
+  },
+  "resolutions": {
+    "polymer": "^2.0.0"
   },
   "devDependencies": {
-    "web-component-tester": "^4.0.0"
+    "web-component-tester": "Polymer/web-component-tester#^6.0.0"
   },
   "private": true
 }

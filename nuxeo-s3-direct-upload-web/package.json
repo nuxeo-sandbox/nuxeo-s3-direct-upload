@@ -1,5 +1,5 @@
 {
-  "name": "s3upload",
+  "name": "nuxeo-s3-direct-upload",
   "devDependencies": {
     "cpr": "^2.0.2",
     "eslint": "^3.12.0",
@@ -17,8 +17,8 @@
     "prebuild": "npm run clean",
     "build": "polymer build",
     "postbuild": "npm run nuxeo",
-    "prenuxeo": "mkdirp target/classes/nuxeo.war/s3upload",
-    "nuxeo": "cpr build/default/ target/classes/nuxeo.war/s3upload -o && cpr nuxeo/ target/classes/ -o",
+    "prenuxeo": "mkdirp target/classes/nuxeo.war/app",
+    "nuxeo": "cpr build/default/ target/classes/nuxeo.war/app -o && cpr nuxeo/ target/classes/ -o",
     "serve": "polymer serve --port 3000 --proxy-path=\"${npm_config_proxy_path:-nuxeo}\" --proxy-target=\"${npm_config_proxy_target:-http://localhost:8080/nuxeo}\""
   }
 }
