@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.nuxeo.s3.upload</groupId>
     <artifactId>nuxeo-s3-direct-upload-parent</artifactId>
-    <version>9.10-SNAPSHOT</version>
+    <version>10.1-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
