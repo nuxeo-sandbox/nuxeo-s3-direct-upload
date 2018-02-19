@@ -9,9 +9,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/paper-input/paper-input.html">
-<link rel="import" href="../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="my-icons.html">
+
 <link rel="import" href="../bower_components/nuxeo-elements/nuxeo-connection.html">
 <link rel="import" href="../bower_components/nuxeo-elements/nuxeo-document.html">
 <script type="text/javascript" src="../bower_components/aws-sdk-js/dist/aws-sdk.js"></script>
@@ -32,18 +42,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         display: block;
       }
     </style>
-    <nuxeo-connection url="http://localhost:8080/nuxeo" username="Administrator" password="Administrator"></nuxeo-connection>
+    <nuxeo-connection url="http://192.168.1.19:8080/nuxeo" username="Administrator" password="Administrator"></nuxeo-connection>
     <nuxeo-document id="poster" method="POST" doc-path="/default-domain/workspaces/test" data="{{document}}"></nuxeo-document>
 
     <div>
       <paper-card heading="Upload New Asset">
-          <div class="card-content">
-            <paper-input label="Asset Name" value="{{title}}"></paper-input>
-            <input type="file" id="filepicker">
-            <nuxeo-dropzone-s3 document="{{document}}" xpath="file:content"></nuxeo-dropzone-s3>
-         </div>
-         <div class="card-actions">
-            <paper-button on-tap="_upload">Upload</paper-button>
+        <div class="card-content">
+          <paper-input label="Asset Name" value="{{title}}"></paper-input>
+          <input type="file" id="filepicker">
+          <nuxeo-dropzone-s3 document="{{document}}" xpath="file:content"></nuxeo-dropzone-s3>
+        </div>
+        <div class="card-actions">
+          <paper-button on-tap="_upload">Upload</paper-button>
         </div>
       </paper-card>
     </div>
@@ -64,6 +74,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
 
       _upload:function() {
+        this.title = "FooBarBaz";
         this.document.title = this.title;
         this.document.name = this.title;
         this.$.poster.execute();

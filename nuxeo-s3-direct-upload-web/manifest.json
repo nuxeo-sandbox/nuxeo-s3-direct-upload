@@ -1,6 +1,6 @@
 {
-  "name": "s3upload",
-  "short_name": "s3upload",
+  "name": "nuxeo-s3-direct-upload",
+  "short_name": "nuxeo-s3-direct-upload",
   "start_url": "./?homescreen=1",
   "display": "standalone",
   "theme_color": "#3f51b5",

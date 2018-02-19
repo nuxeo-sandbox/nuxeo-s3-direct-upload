@@ -16,12 +16,17 @@ limitations under the License.
 -->
 <script type="text/javascript" src="../bower_components/aws-sdk-js/dist/aws-sdk.js"></script>
 <script type="text/javascript" src="../bower_components/js-spark-md5/spark-md5.js"></script>
+<script type="text/javascript" src="../bower_components/evaporatejs/evaporate.js"></script>
+
+
 
 <script>
+
   var Nuxeo = Nuxeo || {};
+  var evaporate = null;
 
   /**
-   * @polymerBehavior Nuxeo.UploaderBehavior
+   * @polymerBehavior Nuxeo.S3UploaderBehavior
    */
   Nuxeo.S3UploaderBehavior = {
 
@@ -67,6 +72,10 @@ limitations under the License.
         type: Boolean,
         value: false
       }
+    },
+
+    ready: function() {
+      this._newBatch();
     },
 
     setupDropZone: function(el) {
@@ -138,14 +147,21 @@ limitations under the License.
         file.progress = 0;
         file.error = false;
         file.complete = false;
+        file.bucket = evaporate.config.bucket;
         this.push('files', file);
+        evaporate.add({
+          name: file.name,
+          file: file,
+          progress: function(progressValue) { context._uploadProgressUpdated(file.idx, file, progressValue * 100 ); },
+          complete: function (_xhr, awsKey) { file.key = awsKey; context._uploadFinished(file.idx); context._batchFinished();  }
+        });
         //var blob = new Nuxeo.Blob({ content: file });
-        this._uploadStarted(i, file);
+        //this._uploadStarted(i, file);
         /*this.uploader.upload(blob)
           .then(function(result) {
             this._uploadFinished(result.blob.fileIdx);
           }.bind(this));*/
-        this.getFileMd5(file).then(function(file){
+        /*this.getFileMd5(file).then(function(file){
           //this._computeMD5(file);
           //file.md5 = md5;
           this.s3.upload({
@@ -169,6 +185,7 @@ limitations under the License.
             });
           });
         }.bind(this));
+        */
       }
       /*this.uploader.done().then(function(result) {
         this._batchFinished(result.batch._batchId);
@@ -176,21 +193,43 @@ limitations under the License.
     },
 
     _newBatch: function() {
-      AWS.config.update({
-        region: REGION,
-        credentials: new AWS.CognitoIdentityCredentials({
-          IdentityPoolId: CognitoID
-        }),
-        useAccelerateEndpoint: true
-      });
-
-      this.s3 = new AWS.S3({
-        apiVersion: '2006-03-01',
-        params: {
-          region: REGION,
-          Bucket: BUCKET
-        }
-      });
+      this.connection = this.$.nx;
+      var connection = this.connection;
+      var s3Creds = this.$.s3Creds;
+      s3Creds.execute()
+        .then(function(result) {
+            var config = {};
+            config.signerUrl = connection.client._restURL.concat("creds/s3/sign");
+            config.bucket = result.bucketName;
+            config.awsRegion = result.region;
+            config.aws_key = result.secretKeyId;
+            config.s3Acceleration = result.transferAcceleration || false;
+            config.computeContentMd5 = true;
+            config.cryptoMd5Method = function (data) { return AWS.util.crypto.md5(data, 'base64'); };
+            config.cryptoHexEncodedHash256 = function (data) { return AWS.util.crypto.sha256(data, 'hex'); };
+            config.sendCanonicalRequestToSignerUrl = true;
+            config.signHeaders = { "Authorization": connection.user._baseOptions.headers.Authorization };
+            config.logging = false;
+            Evaporate.create(config)
+            .then(function(ev) {
+                evaporate = ev;
+            })
+        });
+      //AWS.config.update({
+      //  region: REGION,
+      //  credentials: new AWS.CognitoIdentityCredentials({
+      //    IdentityPoolId: CognitoID
+      //  }),
+      //  useAccelerateEndpoint: true
+      //});
+//
+      //this.s3 = new AWS.S3({
+      //  apiVersion: '2006-03-01',
+      //  params: {
+      //    region: REGION,
+      //    Bucket: BUCKET
+      //  }
+      //});
     },
 
     accepts: function(files) {
@@ -264,7 +303,7 @@ limitations under the License.
       this.uploadFiles(e.dataTransfer.files);
     },
 
-    getFileMd5:function(file) {
+    getFileMd5: function(file) {
       var promise = new Promise(function(resolve, reject) {
         var chunkSize = 2097152,                             // Read in chunks of 2MB
             chunks = Math.ceil(file.size / chunkSize),
