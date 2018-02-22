@@ -33,7 +33,7 @@ import org.nuxeo.ecm.core.transientstore.api.TransientStore;
 import org.nuxeo.ecm.core.transientstore.api.TransientStoreService;
 import org.nuxeo.runtime.api.Framework;
 
-import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -198,7 +198,11 @@ public class S3DirectBatchHandler extends AbstractBatchHandler {
                 , blobInfo.length
         );
 
-        batch.addBlob(fileIndex, blob);
+        try {
+            batch.addFile(fileIndex, blob, blobInfo.filename, blobInfo.mimeType);
+        } catch (IOException e) {
+            throw new NuxeoException(e);
+        }
 
         return true;
     }
