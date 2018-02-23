@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-Vendor: Nuxeo
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: .
+Bundle-Version: 1.0.0
+Bundle-Name: org.nuxeo.s3.upload.web.ui
+Nuxeo-Component: OSGI-INF/nuxeo-s3-direct-upload-webresources-contrib.xml
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.nuxeo.web.ui.s3.upload;singleton:=true

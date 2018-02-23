@@ -28,7 +28,7 @@
 
     <dependency>
       <groupId>org.nuxeo.s3.upload</groupId>
-      <artifactId>nuxeo-s3-direct-upload-web</artifactId>
+      <artifactId>nuxeo-s3-direct-upload-web-ui</artifactId>
     </dependency>
   </dependencies>
 

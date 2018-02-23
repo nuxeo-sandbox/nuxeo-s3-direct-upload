@@ -16,7 +16,7 @@
 
   <modules>
     <module>nuxeo-s3-direct-upload-core</module>
-    <module>nuxeo-s3-direct-upload-web</module>
+    <module>nuxeo-s3-direct-upload-web-ui</module>
     <module>nuxeo-s3-direct-upload-package</module>
   </modules>
 
@@ -77,7 +77,7 @@
       </dependency>
       <dependency>
         <groupId>org.nuxeo.s3.upload</groupId>
-        <artifactId>nuxeo-s3-direct-upload-web</artifactId>
+        <artifactId>nuxeo-s3-direct-upload-web-ui</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
