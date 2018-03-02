@@ -1,10 +1,14 @@
 package org.nuxeo.s3;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
@@ -42,6 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @CommonsLog
 public class S3DirectBatchHandler extends AbstractBatchHandler {
@@ -152,9 +158,13 @@ public class S3DirectBatchHandler extends AbstractBatchHandler {
     @Override
     public boolean completeUpload(String batchId, String fileIndex, BatchFileInfo fileInfo) {
         Batch batch = getBatch(batchId);
-
-        ObjectMetadata s3ClientObjectMetadata = s3Client.getObjectMetadata(bucket, fileInfo.getKey());
-
+        String sourceKey = getS3Key(fileInfo.getKey());
+        ObjectMetadata s3ClientObjectMetadata;
+        try {
+            s3ClientObjectMetadata = s3Client.getObjectMetadata(bucket, sourceKey);
+        } catch (AmazonS3Exception e) {
+            throw new NuxeoException(String.format("Cannot complete upload because s3://%s/%s not found", bucket, sourceKey), e);
+        }
         if (s3ClientObjectMetadata == null) {
             return false;
         }
@@ -171,9 +181,9 @@ public class S3DirectBatchHandler extends AbstractBatchHandler {
         ObjectMetadata updatedObjectMetadata;
 
         if (s3ClientObjectMetadata.getContentLength() > FIVE_GB) {
-            updatedObjectMetadata = copyBigFile(s3ClientObjectMetadata, bucket, fileInfo.getKey(), etag, true);
+            updatedObjectMetadata = copyBigFile(s3ClientObjectMetadata, bucket, sourceKey, etag, true);
         } else {
-            updatedObjectMetadata = copyFile(s3ClientObjectMetadata, bucket, fileInfo.getKey(), etag, true);
+            updatedObjectMetadata = copyFile(s3ClientObjectMetadata, bucket, sourceKey, etag, true);
             if (isMultipartUpload) {
                 String previousEtag = etag;
                 etag = updatedObjectMetadata.getETag();
@@ -207,6 +217,11 @@ public class S3DirectBatchHandler extends AbstractBatchHandler {
         return true;
     }
 
+    protected String getS3Key(String key) {
+        // TODO: impl https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html#object-keys
+        return key.replace("+", " ");
+    }
+
     private boolean containsRequired(Map<String, String> configProperties) {
         return configProperties.containsKey(Constants.Config.Properties.AWS_SECRET_KEY_ID)
                 && configProperties.containsKey(Constants.Config.Properties.AWS_SECRET_ACCESS_KEY)
@@ -222,24 +237,39 @@ public class S3DirectBatchHandler extends AbstractBatchHandler {
             TransientStoreService service = Framework.getService(TransientStoreService.class);
             transientStore = service.getStore(transientStoreName);
         }
-
         return transientStore;
     }
 
     private AWSSecurityTokenService initClient(String awsSecretKeyId, String awsSecretAccessKey, String region) {
+        AWSCredentialsProvider awsCredentialsProvider = getAwsCredentialsProvider(awsSecretKeyId, awsSecretAccessKey);
         return AWSSecurityTokenServiceClientBuilder
                 .standard()
                 .withRegion(region)
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsSecretKeyId, awsSecretAccessKey)))
-                .build()
-                ;
+                .withCredentials(awsCredentialsProvider)
+                .build();
+    }
+
+    protected AWSCredentialsProvider getAwsCredentialsProvider(String awsSecretKeyId, String awsSecretAccessKey) {
+        AWSCredentialsProvider ret;
+        if (isBlank(awsSecretKeyId) || isBlank(awsSecretAccessKey)) {
+            ret = InstanceProfileCredentialsProvider.getInstance();
+            try {
+              ret.getCredentials();
+            } catch (AmazonClientException e) {
+              throw new RuntimeException("Missing AWS credentials and no instance role found", e);
+            }
+        } else {
+          ret = new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsSecretKeyId, awsSecretAccessKey));
+        }
+        return ret;
     }
 
     private AmazonS3 initS3Client(String awsSecretKeyId, String awsSecretAccessKey, String region, boolean useAccelerate) {
+        AWSCredentialsProvider awsCredentialsProvider = getAwsCredentialsProvider(awsSecretKeyId, awsSecretAccessKey);
         return AmazonS3ClientBuilder
                 .standard()
                 .withRegion(region)
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(awsSecretKeyId, awsSecretAccessKey)))
+                .withCredentials(awsCredentialsProvider)
                 .withAccelerateModeEnabled(useAccelerate)
                 .build()
                 ;
